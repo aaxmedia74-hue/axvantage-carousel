@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>AXVANTAGE CAROUSEL — v1 (original)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --app-bg:#fafafa;
+    --stage:#e9e9ee;
+    --ui-bg:#ffffff;
+    --ui-border:#e5e7eb;
+
+    --ink:#2C2C2E;
+    --muted:#9CA3AF;
+    --paper:#FFFFFF;
+    --paper-gray:#E0E0E6; /* темнее ~30% */
+    --w:1080px; --h:1350px;
+
+    /* Базовые размеры */
+    --pad-top:18px; --pad-lr:44px; --pad-bot:22px;
+    --fz-head:68px;  --lh-head:1.18;
+    --fz-body:38px;  --lh-body:1.55;
+    --fz-gray:36px;  --lh-gray:1.55;
+
+    --tag-size:22px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--app-bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .app{max-width:1000px;margin:0 auto;padding:10px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 2px}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;margin:6px 2px}
+  .controls label{font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;background:var(--ui-bg);border:1px solid var(--ui-border);border-radius:10px;padding:6px 8px}
+  .controls input[type="range"]{width:160px}
+  .controls input[type="text"]{padding:6px 8px;border:1px solid var(--ui-border);border-radius:8px}
+  textarea{width:100%;min-height:220px;padding:12px 14px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-bg);resize:vertical;font-size:15px;line-height:1.5;color:var(--ink)}
+  select,button{padding:10px 12px;border-radius:12px;border:1px solid var(--ui-border);background:var(--ui-bg)}
+  button.primary{background:#111;color:#fff;border-color:#111}
+  .stage{display:flex;justify-content:center}
+  .outer{position:relative;width:min(100%,620px);aspect-ratio:1080/1350;border:1px dashed #ddd;border-radius:16px;background:var(--stage);padding:6px}
+  .slide{width:var(--w);height:var(--h);transform-origin:top left;background:var(--paper);border-radius:18px;overflow:hidden;position:absolute;left:0;top:0;display:flex;flex-direction:column}
+  .content{flex:1;padding:var(--pad-top) var(--pad-lr) var(--pad-bot) var(--pad-lr);display:flex;flex-direction:column;gap:14px}
+  .headline{font-weight:800;font-size:var(--fz-head);line-height:var(--lh-head);margin:0;color:var(--ink);overflow-wrap:anywhere;word-break:break-word;hyphens:auto;text-indent:0;}
+  .para{font-size:var(--fz-body);line-height:var(--lh-body);color:var(--ink);margin:0;text-indent:0;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;}
+  .gray{background:var(--paper-gray);border-radius:16px;padding:16px 18px;color:#2C2C2E;font-size:var(--fz-gray);line-height:var(--lh-gray);margin:0;text-indent:0}
+  .tag{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#8E8E93;font-size:var(--tag-size);font-weight:600;white-space:nowrap}
+  .nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 10px}
+  .counter{font-weight:700;color:var(--ink)}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 8px;
+}
+.controls button, .controls input[type=range] {
+  transform: scale(0.9);
+}
+
+
+#slide[data-theme="dark"] .gray,
+#slide[data-theme="dark"] .gray p {
+  color: var(--ink) !important;
+}
+
+
+#slide[data-theme="dark"] .gray {
+  background: #2b2b2f !important; /* slightly lighter gray for contrast on black */
+}
+
+/* Safe text flow inside slide */
+#slide .content, #slide .content *{
+  text-indent:0 !important;
+}
+#slide .content h1, 
+#slide .content h2, 
+#slide .content p{
+  margin-left:0 !important;
+}
+
+
+  /* Dark theme */
+  #slide[data-theme="dark"]{
+    --ink:#F5F5F7;
+    --muted:#A1A1AA;
+    --paper:#000000;
+    --paper-gray:#0F0F14;
+    --app-bg:#0B0B0C;
+    --stage:#18181B;
+    --ui-bg:#111111;
+    --ui-border:#2A2A2A;
+  }
+</style>
+<style id="axv18-style">
+/* AXV v1.8: compact buttons layout and safe overrides */
+.btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:stretch}
+.btns button,.btns a{width:100%}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="toolbar">
+<button id="ex">Вставить пример</button>
+<button class="primary" id="gen">Сформировать</button>
+<label>Формат:
+        <select id="size">
+<option selected="" value="1080x1350">1080×1350</option>
+<option value="1080x1080">1080×1080 (1:1)</option>
+</select>
+</label>
+<button id="open">Открыть как изображение</button>
+<button id="share">Поделиться/Instagram</button>
+<button id="save">Скачать PNG</button>
+<button id="saveAll">Скачать все</button>
+<button id="theme">Тёмная тема</button>
+</div>
+<div class="controls">
+<label>Боковые поля
+        <input id="side" max="96" min="16" step="1" type="range" value="44"/>
+<span id="sidev">44px</span>
+</label>
+<label>Размер тега
+        <input id="tagsize" max="36" min="16" step="1" type="range" value="22"/>
+<span id="tagsizev">22px</span>
+</label>
+<label>Текст тега
+        <input id="tagtext" type="text" value="@axvantage"/>
+</label>
+<label>Размер текста
+        <input id="typesize" max="130" min="70" step="1" type="range" value="100"/>
+<span id="typesizev">100%</span>
+</label>
+
+<label for="padTop">Отступ сверху:</label>
+<input id="padTop" max="200" min="0" type="range" value="44"/>
+</div>
+<textarea id="src" placeholder="Слайды — через пустую строку. Заголовок жирным ТОЛЬКО если в первом предложении есть номер 'N.'. Если номера нет — всё обычным текстом. Серый блок — последнее предложение (1–5). Воронка — начни с ‼️ (символ сохранится на слайде)."></textarea>
+<div class="stage">
+<div class="outer" id="outer">
+<div class="slide" id="slide"></div>
+</div>
+</div>
+<div class="nav">
+<button id="prev">← Назад</button>
+<div class="counter"><span id="ci">1</span>/<span id="cn">1</span></div>
+<button id="next">Вперёд →</button>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script>
+
+function AXV_getPaper(){
+  try{
+    const css = getComputedStyle(document.documentElement);
+    const val = css.getPropertyValue('--paper').trim();
+    return val || '#FFFFFF';
+  }catch(e){ return '#FFFFFF'; }
+}
+
+  const src = document.getElementById('src');
+  const slideEl = document.getElementById('slide');
+  const outer = document.getElementById('outer');
+  const sizeSel = document.getElementById('size');
+  const ci = document.getElementById('ci');
+  const cn = document.getElementById('cn');
+  const side = document.getElementById('side');
+  const sidev = document.getElementById('sidev');
+  const tagSize = document.getElementById('tagsize');
+  const tagSizeV = document.getElementById('tagsizev');
+  const tagTextInput = document.getElementById('tagtext');
+  const typeSize = document.getElementById('typesize');
+  const typeSizeV = document.getElementById('typesizev');
+
+  let slides=[], idx=0, tagText='@axvantage';
+
+  const base = { head:68, body:38, gray:36 };
+
+  function setSize(){
+    const [w,h]=sizeSel.value.split('x').map(Number);
+    document.documentElement.style.setProperty('--w',w+'px');
+    document.documentElement.style.setProperty('--h',h+'px');
+    outer.style.aspectRatio=w+' / '+h;
+    fit();
+  }
+  function fit(){
+    const scale = outer.clientWidth / parseInt(getComputedStyle(document.documentElement).getPropertyValue('--w'));
+    slideEl.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('resize', fit);
+  sizeSel.addEventListener('change', ()=>{ setSize(); render(); });
+
+  document.getElementById('ex').onclick=()=>{
+    src.value=`1. Ты замечал, как за ужином стало тихо?
+Раньше слышно было звон ложек, чьи-то перебранки, “передай хлеб”, смех. Сейчас — только гул телевизора и перелистывание ленты. За столом четверо людей, но каждый — в отдельной комнате мира. Бабушка зовёт, мама ставит суп, отец поправляет салфетки, но никто не поднимает голову. Не потому что не хотят.
+Просто мы разучились быть вместе.
+
+‼️ У меня постоянно выходят простые практики и привычки, которые реально меняют жизнь. Хочешь их взять? Напиши «шаг», и я поделюсь.`;
+  };
+  document.getElementById('gen').onclick=()=>{ slides=parseText(src.value.trim()); if(!slides.length)slides=[empty()]; cn.textContent=slides.length; idx=0; render(); };
+  document.getElementById('prev').onclick=()=>{ if(!slides.length)return; idx=(idx-1+slides.length)%slides.length; render(); };
+  document.getElementById('next').onclick=()=>{ if(!slides.length)return; idx=(idx+1)%slides.length; render(); };
+
+  side.addEventListener('input', ()=>{
+    const v = side.value;
+    sidev.textContent = v+'px';
+    document.documentElement.style.setProperty('--pad-lr', v+'px');
+  });
+  tagSize.addEventListener('input', ()=>{
+    const v = tagSize.value;
+    tagSizeV.textContent = v+'px';
+    document.documentElement.style.setProperty('--tag-size', v+'px');
+  });
+  tagTextInput.addEventListener('input', ()=>{
+    tagText = tagTextInput.value || '@axvantage';
+    render();
+  });
+  typeSize.addEventListener('input', ()=>{
+    const percent = parseInt(typeSize.value,10);
+    typeSizeV.textContent = percent + '%';
+    applyTypeScale(percent/100);
+  });
+  function applyTypeScale(k){
+    document.documentElement.style.setProperty('--fz-head', (base.head*k) + 'px');
+    document.documentElement.style.setProperty('--fz-body', (base.body*k) + 'px');
+    document.documentElement.style.setProperty('--fz-gray', (base.gray*k) + 'px');
+  }
+
+  function empty(){ return {numbered:false, headline:'', body:[], gray:null, funnel:false, prefix:''}; }
+  function splitSentences(t){
+  // Улучшенный сплиттер предложений: учитывает кавычки/скобки/запятые после .!?
+  const m = t.match(/[^.!?]+[.!?]+[»")'»,\]]*(?:\s+|$)/g);
+  return m ? m.map(s => s.trim()) : [t.trim()];
+}
+  function parseText(raw){
+    if(!raw) return [];
+    return raw.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean).map(p=>{
+      let funnel=p.startsWith('‼️');
+      let prefix = '';
+      if(funnel){
+        // сохраняем символ в контенте
+        prefix = '‼️ ';
+        p = p.replace(/^‼️\s*/, '');
+      }
+      let numberPrefix=''; p=p.replace(/^\s*(\d+)\.\s*/, (m,n)=>{ numberPrefix = n+'. '; return ''; });
+      const sentences=splitSentences(p);
+      const hasNumber = !!numberPrefix;
+      const headline = hasNumber ? (numberPrefix + (sentences[0]||'')) : '';
+      const body = hasNumber ? sentences.slice(1) : sentences;
+      return {numbered:hasNumber, headline, body, funnel, prefix};
+    });
+  }
+
+  function render(){
+    const s = slides[idx]||empty();
+    ci.textContent = idx+1;
+    let gray=null, body=s.body.slice();
+    if(idx<5 && !s.funnel && body.length) gray = body.pop();
+    const bodyText = body.join(' ');
+    const bodyHTML = body.length
+      ? `<p class="para">${escapeHTML(s.funnel ? (s.prefix + bodyText) : bodyText)}</p>`
+      : (s.funnel ? `<p class="para">${escapeHTML(s.prefix)}</p>` : '');
+    slideEl.innerHTML = `
+      <div class="content">
+        ${s.numbered ? `<h1 class="headline">${escapeHTML(s.headline)}</h1>` : ''}
+        ${bodyHTML}
+        ${gray?`<p class="gray">${escapeHTML(gray)}</p>`:''}
+      </div>
+      <div class="tag">${escapeHTML(tagText)}</div>`;
+    fit();
+  }
+
+  function escapeHTML(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function getCanvas(){ return await html2canvas(slideEl,{backgroundColor:AXV_getPaper(),scale:2}); }
+  document.getElementById('open').onclick=async()=>{ const c=await getCanvas(); const url=c.toDataURL('image/png'); const w=window.open(); w.document.write('<img style="width:100%;height:auto" src="'+url+'">'); };
+  document.getElementById('share').onclick=async()=>{ const c=await getCanvas(); const b=await new Promise(r=>c.toBlob(r,'image/png')); const f=new File([b],`slide_${idx+1}.png`,{type:'image/png'}); if(navigator.canShare&&navigator.canShare({files:[f]})) await navigator.share({files:[f],title:'slide'}); else saveAs(b,`slide_${idx+1}.png`); };
+  document.getElementById('save').onclick=async()=>{ const c=await getCanvas(); c.toBlob(b=>saveAs(b,`slide_${idx+1}.png`)); };
+  document.getElementById('saveAll').onclick=async()=>{ const zip=new JSZip(); const keep=idx; for(let k=0;k<slides.length;k++){ idx=k; render(); await new Promise(r=>setTimeout(r,40)); const c=await getCanvas(); const b=await new Promise(r=>c.toBlob(r)); zip.file(`slide_${k+1}.png`,b);} const out=await zip.generateAsync({type:'blob'}); saveAs(out,'slides.zip'); idx=keep; render(); };
+
+  
+  // Theme toggle
+  const themeBtn = document.getElementById('theme');
+  let isDark = false;
+  function applyTheme(){
+    if(isDark){
+      slideEl.setAttribute('data-theme','dark');
+      themeBtn.textContent = 'Светлая тема';
+    } else {
+      slideEl.removeAttribute('data-theme');
+      themeBtn.textContent = 'Тёмная тема';
+    }
+    try{ if(typeof render==='function') render(); }catch(e){}
+  }
+  if(themeBtn){
+    themeBtn.addEventListener('click', ()=>{ isDark = !isDark; applyTheme(); });
+  }
+  // Persist across reloads if desired (optional localStorage)
+  try{
+    const saved = localStorage.getItem('axv_theme_dark');
+    if(saved){ isDark = saved === '1'; }
+  }catch(e){}
+  // Save on change
+  if(themeBtn){
+    themeBtn.addEventListener('click', ()=>{
+      try{ localStorage.setItem('axv_theme_dark', isDark ? '1' : '0'); }catch(e){}
+    });
+  }
+  applyTheme();
+
+  // init
+  setSize(); render(); applyTypeScale(1);
+</script>
+<script>
+// ===== AXV v1.8 — Non-destructive overrides (Android Instagram) =====
+async function AXV_captureSlides() {
+  const nodes = document.querySelectorAll('.slideWrap .slide, .slide');
+  if(!nodes.length) throw new Error('Слайды не найдены');
+  const canvases = [];
+  for (const n of nodes) {
+    const c = await html2canvas(n,{backgroundColor:AXV_getPaper(), scale:2, useCORS:true});
+    canvases.push(c);
+  }
+  return canvases;
+}
+
+// Save all as separate PNGs (no ZIP)
+async function AXV_savePNGs() {
+  const canvases = await AXV_captureSlides();
+  let i=1;
+  for (const c of canvases) {
+    const url = c.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `slide-${i}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    i++;
+    await new Promise(r=>setTimeout(r,120));
+  }
+}
+
+// Share multiple as JPEG (better for Instagram receivers)
+async function AXV_shareInstagram() {
+  if(!('share' in navigator) || !('canShare' in navigator)){
+    alert('Пакетный share не поддерживается. Сохраните PNG и загрузите в Instagram вручную.');
+    return;
+  }
+  const canvases = await AXV_captureSlides();
+  const files = [];
+  let i=1;
+  for (const c of canvases) {
+    const dataUrl = c.toDataURL('image/jpeg', 0.95);
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    files.push(new File([blob], `slide-${i}.jpg`, {type:'image/jpeg'}));
+    i++;
+  }
+  if(navigator.canShare({files})){
+    try{ await navigator.share({files, title:'AXVANTAGE Carousel'}); }catch(e){}
+  } else {
+    alert('Система не принимает несколько файлов. Сохраните PNG и загрузите вручную.');
+  }
+}
+
+// Replace existing buttons by visible label text
+(function AXV_bind(){
+  const all = Array.from(document.querySelectorAll('button, a'));
+  function byTextExact(t){
+    const low = t.toLowerCase();
+    return all.find(b => ((b.textContent||'').trim().toLowerCase()===low));
+  }
+  function byTextRegex(re){
+    return all.find(b => re.test((b.textContent||'').trim()));
+  }
+  // «Скачать все» (все варианты ё/е)
+  const dl = byTextExact('скачать все') || byTextExact('скачать всё') || byTextRegex(/скачать\\s+все/i);
+  if(dl){
+    const clone = dl.cloneNode(true);
+    clone.addEventListener('click', function(ev){ ev.preventDefault(); try{ if(typeof render==='function') render(); }catch(e){} AXV_savePNGs(); }, {passive:false});
+    dl.replaceWith(clone);
+  }
+  // «Поделиться/Instagram» или «Публикация в Instagram»
+  const ig = byTextRegex(/поделиться\\s*\\/\\s*instagram|публикац.*instagram/i) || byTextRegex(/instagram/i);
+  if(ig){
+    const clone2 = ig.cloneNode(true);
+    clone2.addEventListener('click', function(ev){ ev.preventDefault(); try{ if(typeof render==='function') render(); }catch(e){} AXV_shareInstagram(); }, {passive:false});
+    ig.replaceWith(clone2);
+  }
+})();
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const padTop = document.getElementById("padTop");
+  if (padTop) {
+    document.documentElement.style.setProperty("--pad-top", padTop.value + "px");
+    padTop.addEventListener("input", () => {
+      document.documentElement.style.setProperty("--pad-top", padTop.value + "px");
+    });
+  }
+});
+</script>
+</body>
+</html>
