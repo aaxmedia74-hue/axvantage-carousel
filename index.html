@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>AXVANTAGE CAROUSEL — v2.3.2 (custom bg)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --app-bg:#0b1c2d;
+    --stage:#132a42;
+    --ui-bg:#ffffff;
+    --ui-border:#e5e7eb;
+
+    --ink:#2C2C2E;
+    --muted:#9CA3AF;
+    --paper:#FFFFFF;
+    --paper-gray:#E0E0E6; /* темнее ~30% */
+    --w:1080px; --h:1350px;
+
+    /* Базовые размеры */
+    --pad-top:18px; --pad-lr:44px; --pad-bot:22px;
+    --fz-head:68px;  --lh-head:1.18;
+    --fz-body:42px;  --lh-body:1.55;
+    --fz-gray:36px;  --lh-gray:1.55;
+
+    --tag-size:22px;
+
+    /* Custom background overlay */
+    --bg-dim:0.45;          /* 0..1 */
+    --bg-dim-color:#000000; /* overlay base color */
+    --bg-overlay: rgba(0,0,0,0.45);
+  }
+  *{box-sizing:border-box}
+  #slide, #slide *{hyphens:none;-webkit-hyphens:none;-ms-hyphens:none; hyphenate-character:"";}
+  html,html{height:100%;}
+  body{margin:0;height:100%;background:var(--app-bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .app{max-width:1000px;margin:0 auto;padding:10px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 2px}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 2px}
+  .actions button{flex:1;min-width:160px}
+
+  .controls{display:flex;gap:12px;flex-wrap:wrap;margin:6px 2px}
+  .controls label{font-size:13px;color:#374151;display:flex;align-items:center;gap:6px;background:var(--ui-bg);border:1px solid var(--ui-border);border-radius:10px;padding:6px 8px}
+  .controls input[type="range"]{width:160px}
+  .controls input[type="text"]{padding:6px 8px;border:1px solid var(--ui-border);border-radius:8px}
+  textarea{width:100%;min-height:130px;padding:12px 14px;border:1px solid var(--ui-border);border-radius:12px;background:var(--ui-bg);resize:vertical;font-size:15px;line-height:1.5;color:var(--ink)}
+  select,button{padding:10px 12px;border-radius:12px;border:1px solid var(--ui-border);background:var(--ui-bg)}
+  button.primary{background:#111;color:#fff;border-color:#111}
+  .stage{display:flex;justify-content:center}
+  .outer{position:relative;width:min(100%,620px);aspect-ratio:1080/1350;border:1px dashed #ddd;border-radius:16px;background:var(--stage);padding:6px}
+  .slide{width:var(--w);height:var(--h);transform-origin:top left;background:var(--paper);border-radius:18px;overflow:hidden;position:absolute;left:0;top:0;display:flex;flex-direction:column}
+
+  
+  .slide{--content-font: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif}
+  .content, .headline, .para, .gray{font-family: var(--content-font)}
+
+
+  /* Custom background image layer */
+  .bg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;background-repeat:no-repeat;display:none}
+  .bg::after{content:"";position:absolute;inset:0;background:var(--bg-overlay);}
+  .slide.custom-bg{background:transparent}
+  .slide.custom-bg .bg{display:block}
+  .slide.custom-bg .content,.slide.custom-bg .tag{position:relative;z-index:1}
+  .content{flex:1;padding:var(--pad-top) var(--pad-lr) var(--pad-bot) var(--pad-lr);display:flex;flex-direction:column;gap:14px}
+  .headline{font-weight:800;font-size:var(--fz-head);line-height:var(--lh-head);margin:0;color:var(--ink);overflow-wrap:normal;word-break:normal;hyphens:none;-webkit-hyphens:none;-ms-hyphens:none;text-indent:0;}
+  .para{font-size:var(--fz-body);line-height:var(--lh-body);color:var(--ink);margin:0;text-indent:0;overflow-wrap:normal;word-break:normal;hyphens:none;-webkit-hyphens:none;-ms-hyphens:none;}
+  .gray{background:var(--paper-gray);border-radius:16px;padding:16px 18px;color:#2C2C2E;font-size:var(--fz-gray);line-height:var(--lh-gray);margin:0;text-indent:0;overflow-wrap:normal;word-break:normal;hyphens:none;-webkit-hyphens:none;-ms-hyphens:none}
+  .tag{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:#8E8E93;font-size:var(--tag-size);font-weight:600;white-space:nowrap}
+  .nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 10px}
+  .counter{font-weight:700;color:var(--ink)}
+
+
+#slide[data-theme="dark"] .gray,
+#slide[data-theme="dark"] .gray p {
+  color: var(--ink) !important;
+}
+
+
+#slide[data-theme="dark"] .gray {
+  background: #141418 !important;
+}
+
+#slide.custom-bg .gray {
+  background: rgba(0,0,0,0.55) !important;
+  color: #F5F5F7 !important;
+}
+
+/* Safe text flow inside slide */
+#slide .content, #slide .content *{
+  text-indent:0 !important;
+}
+#slide .content h1, 
+#slide .content h2, 
+#slide .content p{
+  margin-left:0 !important;
+}
+
+
+  /* Dark theme */
+  #slide[data-theme="dark"]{
+    --ink:#F5F5F7;
+    --muted:#A1A1AA;
+    --paper:#000000;
+    --paper-gray:#0F0F14;
+    --app-bg:#0B0B0C;
+    --stage:#18181B;
+    --ui-bg:#111111;
+    --ui-border:#2A2A2A;
+  }
+
+/* Toolbar layout tweaks */
+.colorRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+
+  /* Compact UI (requested) */
+  .app{padding:8px}
+  .toolbar{gap:6px;margin:6px 2px}
+  .toolbar button{padding:10px 12px;font-size:14px;border-radius:10px}
+  .actions{gap:6px;margin:8px 2px}
+  .actions button{min-width:140px;padding:10px 12px;font-size:14px;border-radius:10px}
+  .controls{gap:8px;margin:6px 2px}
+  .controls label{gap:6px;padding:5px 7px;border-radius:9px}
+  .controls input[type="range"]{width:140px}
+  .controls input[type="text"]{padding:5px 7px}
+  textarea{min-height:190px}
+
+
+  .header{margin:8px 2px 10px; text-align:center}
+  .title{
+    font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-weight: 700;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-size: 18px;
+    color: #f3efe6;
+  }
+  .themebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 2px}
+  .themebar button{flex:1;min-width:140px}
+
+  /* Theme bar refinements */
+  .themebar{display:flex;gap:8px;flex-wrap:wrap}
+  .themebar button, .themebar select{flex:1 1 22%;min-width:140px}
+  #themeLight{background:#2f2f2f;color:#fff;border-color:#2f2f2f}
+  /* Generate button: dark orange */
+  #gen{background:#c05a17;color:#fff;border-color:#c05a17}
+  #gen:hover{filter:brightness(.95)}
+
+/* Premium palette + notes ink */
+:root{--notes-ink:#2C2C2E;--muted-orange:#C46A2E;--dark-gray:#2c2c2e;}
+#themeLight{background:var(--dark-gray)!important;color:#fff!important;border-color:transparent!important;}
+#gen{background:var(--muted-orange)!important;color:#fff!important;border-color:transparent!important;}
+/* Notes quote style */
+.quote{display:flex; gap:14px; margin-top:18px;}
+.qbar{width:5px; border-radius:6px; background:rgba(0,0,0,0.18); flex:0 0 5px;}
+.qtext{margin:0; color:var(--ink); font-size:var(--fz-body); line-height:var(--lh-body); font-weight:var(--body-weight,500);}
+/* prevent hyphenation */
+.para,.headline,.gray,.qtext{hyphens:none;-webkit-hyphens:none;word-break:normal;overflow-wrap:normal;}
+/* compact font selector */
+#fontSel{padding:10px 10px; border-radius:12px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:14px;}
+/* premium swatches */
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 2px;}
+.swatches button{height:18px;border-radius:8px;border:1px solid rgba(0,0,0,.14);padding:0;background:transparent;}
+.swatches button::before{content:'';display:block;height:100%;border-radius:7px;background:var(--c);}
+
+/* === Button colors === */
+#gen{
+  background:#1E6B4A !important;
+  color:#ffffff !important;
+}
+#themeLight{
+  background:#ffffff !important;
+  color:#111111 !important;
+}
+#themeDark{
+  background:#2C2C2E !important;
+  color:#ffffff !important;
+}
+
+
+/* === Defaults (Notes-like) === */
+:root{
+  --ink:#2C2C2E;          /* graphite default */
+}
+
+</style>
+<style id="axv18-style">
+/* AXV v1.8: compact buttons layout and safe overrides */
+.btns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:stretch}
+.btns button,.btns a{width:100%}
+
+  /* Theme bar refinements */
+  .themebar{display:flex;gap:8px;flex-wrap:wrap}
+  .themebar button, .themebar select{flex:1 1 22%;min-width:140px}
+  #themeLight{background:#2f2f2f;color:#fff;border-color:#2f2f2f}
+  /* Generate button: dark orange */
+  #gen{background:#c05a17;color:#fff;border-color:#c05a17}
+  #gen:hover{filter:brightness(.95)}
+
+/* Premium palette + notes ink */
+:root{--notes-ink:#2C2C2E;--muted-orange:#C46A2E;--dark-gray:#2c2c2e;}
+#themeLight{background:var(--dark-gray)!important;color:#fff!important;border-color:transparent!important;}
+#gen{background:var(--muted-orange)!important;color:#fff!important;border-color:transparent!important;}
+/* Notes quote style */
+.quote{display:flex; gap:14px; margin-top:18px;}
+.qbar{width:5px; border-radius:6px; background:rgba(0,0,0,0.18); flex:0 0 5px;}
+.qtext{margin:0; color:var(--ink); font-size:var(--fz-body); line-height:var(--lh-body); font-weight:var(--body-weight,500);}
+/* prevent hyphenation */
+.para,.headline,.gray,.qtext{hyphens:none;-webkit-hyphens:none;word-break:normal;overflow-wrap:normal;}
+/* compact font selector */
+#fontSel{padding:10px 10px; border-radius:12px; border:1px solid rgba(0,0,0,.12); background:#fff; font-size:14px;}
+/* premium swatches */
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0 2px;}
+.swatches button{height:18px;border-radius:8px;border:1px solid rgba(0,0,0,.14);padding:0;background:transparent;}
+.swatches button::before{content:'';display:block;height:100%;border-radius:7px;background:var(--c);}
+
+/* === Button colors === */
+#gen{
+  background:#1E6B4A !important;
+  color:#ffffff !important;
+}
+#themeLight{
+  background:#ffffff !important;
+  color:#111111 !important;
+}
+#themeDark{
+  background:#2C2C2E !important;
+  color:#ffffff !important;
+}
+
+
+/* === Defaults (Notes-like) === */
+:root{
+  --ink:#2C2C2E;          /* graphite default */
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header"><div class="title">КАРУСЕЛИ АРТЕМА ХАФИЗОВА</div></div>
+<textarea id="src" placeholder="Сюда вставь основной текст без заголовка.&#10;Нажми «Сформировать» и настрой внешний вид параметрами ниже." placeholder="Сюда вставь основной текст без заголовка.
+Нажми «Сформировать» и настрой внешний вид параметрами ниже."></textarea>
+
+<div class="controls">
+  <label>Боковые поля
+    <input id="side" max="96" min="16" step="1" type="range" value="44"/>
+    <span id="sidev">44px</span>
+  </label>
+
+  <label>Отступ сверху
+    <input id="padTop" max="200" min="0" step="1" type="range" value="44"/>
+    <span id="padTopV">44px</span>
+  </label>
+
+  <label>Размер тега
+    <input id="tagsize" max="36" min="16" step="1" type="range" value="22"/>
+    <span id="tagsizev">22px</span>
+  </label>
+
+  <label>Текст тега
+    <input id="tagtext" type="text" value="@axvantage"/>
+  </label>
+
+  <label>Размер текста
+    <input id="typesize" max="130" min="70" step="1" type="range" value="100"/>
+    <span id="typesizev">100%</span>
+  </label>
+
+  <label>Затемнение фона
+    <input id="bgDim" type="range" min="0" max="100" step="1" value="45"/>
+    <span id="bgDimV">45%</span>
+  </label>
+
+  <div class="colorRow"><label>Цвет затемнения
+    <input id="bgColor" type="color" value="#000000"/>
+  </label>
+  <label>Цвет текста
+    <input id="textColor" type="color" value="#2C2C2E"/>
+  </label>
+</div>
+
+  <label>Свой фон (картинка)
+    <input id="bgFile" type="file" accept="image/*"/>
+  </label>
+</div>
+
+
+
+<div class="themebar">
+  <button id="themeLight">Светлая тема</button>
+  <button id="themeDark">Тёмная тема</button>
+  <button id="themeCustom">Свой фон</button>
+  
+<select id="fontSel" class="fontSel" title="Шрифт">
+  <option data-font="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" data-weight="500">Inter</option>
+  <option data-font="'Trebuchet MS','Cabin','Verdana','Segoe UI',sans-serif" data-weight="600">Trebuchet (плотный)</option>
+  <option data-font="Arial,'Arimo','Helvetica',sans-serif" data-weight="600">Arial (плотный)</option>
+  <option data-font="Georgia, 'Times New Roman', serif" data-weight="500">Georgia</option>
+  <option data-font="Verdana, Geneva, sans-serif" data-weight="500">Verdana</option>
+</select>
+
+</div>
+
+<div class="actions">
+  <button class="primary" id="gen">Сформировать</button>
+  <button id="dlAll">Скачать всё</button>
+</div>
+
+
+
+
+<div class="stage">
+<div class="outer" id="outer">
+<div class="slide" id="slide"></div>
+</div>
+</div>
+<div class="nav">
+<button id="prev">← Назад</button>
+<div class="counter"><span id="ci">1</span>/<span id="cn">1</span></div>
+<button id="next">Вперёд →</button>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+// Smooth slider updates (mobile WebView friendly)
+const rafThrottle = (fn) => {
+  let raf = 0;
+  return () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      fn();
+    });
+  };
+};
+
+function AXV_getPaper(){
+  try{
+    // В тёмной теме --paper переопределяется на самом слайде, поэтому читаем стиль со #slide
+    const css = getComputedStyle(slideEl);
+    const val = css.getPropertyValue('--paper').trim();
+    if(val) return val;
+    const bg = css.backgroundColor;
+    return bg && bg !== 'rgba(0, 0, 0, 0)' ? bg : '#FFFFFF';
+  }catch(e){ return '#FFFFFF'; }
+}
+
+  const src = document.getElementById('src');
+  const slideEl = document.getElementById('slide');
+  const outer = document.getElementById('outer');
+  const ci = document.getElementById('ci');
+  const cn = document.getElementById('cn');
+  const side = document.getElementById('side');
+  const sidev = document.getElementById('sidev');
+  const tagSize = document.getElementById('tagsize');
+  const tagSizeV = document.getElementById('tagsizev');
+  const tagTextInput = document.getElementById('tagtext');
+  const typeSize = document.getElementById('typesize');
+  const typeSizeV = document.getElementById('typesizev');
+
+  // Custom background controls
+  const bgFile = document.getElementById('bgFile');
+  const bgDim = document.getElementById('bgDim');
+  const bgDimV = document.getElementById('bgDimV');
+  const bgColor = document.getElementById('bgColor');
+  const textColor = document.getElementById('textColor');
+  // Defaults fix
+  if(textColor){ textColor.value = '#2C2C2E'; slideEl.style.setProperty('--ink', '#2C2C2E'); }
+
+  const padTop = document.getElementById('padTop');
+  const padTopV = document.getElementById('padTopV');
+
+  const themeLightBtn = document.getElementById('themeLight');
+  const themeDarkBtn = document.getElementById('themeDark');
+  const themeCustomBtn = document.getElementById('themeCustom');
+  const fontSel = document.getElementById('fontSel');
+  let bodyWeight='500';
+  const dlAllBtn = document.getElementById('dlAll');
+
+  let slides=[], idx=0, tagText='@axvantage';
+  let exportScale = 2;
+
+  let themeMode = 'light'; // light | dark | custom
+  let bgImageUrl = '';
+  let bgDimPct = 45;
+  let bgDimColor = '#000000';
+  let textInk = '#2C2C2E';
+  let textInkUserSet = false;
+  let contentFont = 'Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+
+  const base = { head:68, body:38, gray:36 };
+
+  function setSize(){
+    const w=1080, h=1350;
+    document.documentElement.style.setProperty('--w', w+'px');
+    document.documentElement.style.setProperty('--h', h+'px');
+    outer.style.aspectRatio = w+' / '+h;
+    fit();
+  }
+  function fit(){
+    const scale = outer.clientWidth / parseInt(getComputedStyle(document.documentElement).getPropertyValue('--w'));
+    slideEl.style.transform = `scale(${scale})`;
+  }
+  window.addEventListener('resize', fit);
+function generateSlides(){
+    slides = parseText(src.value.trim());
+    if(!slides.length) slides = [empty()];
+    cn.textContent = slides.length;
+    idx = 0;
+    render();
+  }
+
+  document.getElementById('gen').onclick = generateSlides;
+  document.getElementById('prev').onclick=()=>{ if(!slides.length)return; idx=(idx-1+slides.length)%slides.length; render(); };
+  document.getElementById('next').onclick=()=>{ if(!slides.length)return; idx=(idx+1)%slides.length; render(); };
+
+    const onSideInput = rafThrottle(()=>{
+    const v = side.value;
+    sidev.textContent = v+'px';
+    document.documentElement.style.setProperty('--pad-lr', v+'px');
+  });
+
+  side.addEventListener('input', onSideInput);
+
+    const onPadTopInput = rafThrottle(()=>{
+    const v = padTop.value;
+    if(padTopV) padTopV.textContent = v+'px';
+    document.documentElement.style.setProperty('--pad-top', v+'px');
+  });
+
+  padTop.addEventListener('input', onPadTopInput);
+
+  // init padTop
+  { const v = padTop.value; if(padTopV) padTopV.textContent = v+'px'; document.documentElement.style.setProperty('--pad-top', v+'px'); }
+    const onTagSizeInput = rafThrottle(()=>{
+    const v = tagSize.value;
+    tagSizeV.textContent = v+'px';
+    document.documentElement.style.setProperty('--tag-size', v+'px');
+  });
+
+  tagSize.addEventListener('input', onTagSizeInput);
+  tagTextInput.addEventListener('input', ()=>{
+    tagText = tagTextInput.value || '@axvantage';
+    render();
+  });
+    const onTypeSizeInput = rafThrottle(()=>{
+    const percent = parseInt(typeSize.value,10);
+    typeSizeV.textContent = percent + '%';
+    applyTypeScale(percent/100);
+  });
+
+  typeSize.addEventListener('input', onTypeSizeInput);
+  function applyTypeScale(k){
+    document.documentElement.style.setProperty('--fz-head', (base.head*k) + 'px');
+    document.documentElement.style.setProperty('--fz-body', (base.body*k) + 'px');
+    document.documentElement.style.setProperty('--fz-gray', (base.gray*k) + 'px');
+  }
+
+  function empty(){ return {numbered:false, headline:'', body:[], gray:null, funnel:false, prefix:''}; }
+  function splitSentences(t){
+  // Улучшенный сплиттер предложений: учитывает кавычки/скобки/запятые после .!?
+  const m = t.match(/[^.!?]+[.!?]+[»")'»,\]]*(?:\s+|$)/g);
+  return m ? m.map(s => s.trim()) : [t.trim()];
+}
+  function extractHeadlineAndRest(text){
+  const t = (text||'').trim();
+  if(!t) return {head:'', rest:''};
+  const m = t.match(/[.:]/);
+  if(!m) return {head:t, rest:''};
+  const i = t.indexOf(m[0]);
+  return {head: t.slice(0, i+1).trim(), rest: t.slice(i+1).trim()};
+}
+
+function parseText(raw){
+    if(!raw) return [];
+    return raw.split(/\n\s*\n/g).map(s=>s.trim()).filter(Boolean).map(p=>{
+      let funnel=p.startsWith('‼️');
+      let prefix = '';
+      if(funnel){
+        prefix = '‼️ ';
+        p = p.replace(/^‼️\s*/, '');
+      }
+      let numberPrefix=''; 
+      p=p.replace(/^\s*(\d+)\.\s*/, (m,n)=>{ numberPrefix = n+'. '; return ''; });
+
+      const hr = extractHeadlineAndRest(p);
+      const headline = (numberPrefix + hr.head).trim();
+
+      const sentences = splitSentences(hr.rest);
+      let gray = '';
+      let body = sentences.slice();
+      if(body.length) gray = body.pop();
+
+      return {headline, body, gray, funnel, prefix};
+    });
+  }
+
+  function render(){
+    const s = slides[idx]||empty();
+    ci.textContent = idx+1;
+
+    const bodyText = (s.body||[]).join(' ').trim();
+    const quoteText = (s.funnel ? (s.prefix + bodyText) : bodyText).trim();
+    const quoteHTML = quoteText ? `<div class="quote"><div class="qbar"></div><p class="qtext">${escapeHTML(quoteText)}</p></div>` : '';
+
+    slideEl.innerHTML = `
+      <div class="bg" id="bgLayer"></div>
+      <div class="content">
+        ${s.headline ? `<h1 class="headline">${escapeHTML(s.headline)}</h1>` : ''}
+        ${quoteHTML}
+        ${(s.gray||'').trim()?`<p class="gray">${escapeHTML((s.gray||'').trim())}</p>`:''}
+      </div>
+      <div class="tag">${escapeHTML(tagText)}</div>`;
+
+    updateBgOverlay();
+
+    // Apply custom background image (fix)
+    const bgLayerEl = document.getElementById('bgLayer');
+    if(bgLayerEl){
+      if(themeMode === 'custom' && bgImageUrl){
+        bgLayerEl.style.backgroundImage = `url(${bgImageUrl})`;
+      }else{
+        bgLayerEl.style.backgroundImage = '';
+      }
+    }
+
+    fit();
+  }
+
+  function escapeHTML(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function getCanvas(){
+    const opts = {scale:exportScale, useCORS:true};
+    // In custom mode let html2canvas render the image background; avoid forcing a solid background.
+    if(themeMode !== 'custom') opts.backgroundColor = AXV_getPaper();
+    return await html2canvas(slideEl, opts);
+  }
+
+
+  async function downloadAllSlides(){
+    if(!slides.length) generateSlides();
+    const total = slides.length || 1;
+    const oldIdx = idx;
+    for(let i=0;i<total;i++){
+      idx = i;
+      render();
+      // Let layout settle on mobile browsers
+      await new Promise(r=>setTimeout(r, 60));
+      const c = await getCanvas();
+      const url = c.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `slide_${String(i+1).padStart(2,'0')}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      // small pause so the browser doesn't choke
+      await new Promise(r=>setTimeout(r, 120));
+    }
+    idx = oldIdx;
+    render();
+  }
+
+  if(dlAllBtn) dlAllBtn.onclick = downloadAllSlides;
+
+  // ===== Theme mode (light / dark / custom) =====
+  function applyThemeMode(){
+    // Reset
+    slideEl.classList.remove('custom-bg');
+    slideEl.removeAttribute('data-theme');
+
+    if(themeMode === 'dark'){
+      slideEl.setAttribute('data-theme','dark');
+    }
+    if(themeMode === 'custom'){
+      // Custom background with readable text by default (dark UI style)
+      slideEl.setAttribute('data-theme','dark');
+      slideEl.classList.add('custom-bg');
+    }
+    // Update button states
+    if(themeLightBtn) themeLightBtn.classList.toggle('primary', themeMode==='light');
+    if(themeDarkBtn) themeDarkBtn.classList.toggle('primary', themeMode==='dark');
+    if(themeCustomBtn) themeCustomBtn.classList.toggle('primary', themeMode==='custom');
+
+    // enable/disable custom bg controls
+    const en = themeMode==='custom';
+    if(bgFile) bgFile.disabled = !en;
+    if(bgDim) bgDim.disabled = !en;
+    if(bgColor) bgColor.disabled = !en;
+    if(textColor) textColor.disabled = false;
+
+    // Apply current text color without full re-render
+    if(!textInkUserSet && textColor){
+      const auto = (themeMode==='light') ? '#2C2C2E' : '#F5F5F7';
+      textInk = auto;
+      textColor.value = auto;
+    }
+    slideEl.style.setProperty('--ink', textInk);
+    render();
+  }
+
+  if(themeLightBtn) themeLightBtn.addEventListener('click', ()=>{ themeMode='light'; applyThemeMode(); });
+  if(themeDarkBtn) themeDarkBtn.addEventListener('click', ()=>{ themeMode='dark'; applyThemeMode(); });
+  if(themeCustomBtn) themeCustomBtn.addEventListener('click', ()=>{ themeMode='custom'; applyThemeMode(); });
+
+  // Text color (fast, no full render)
+  function updateTextInk(){
+    textInkUserSet = true;
+    textInk = (textColor?.value || textInk || '#2C2C2E');
+    slideEl.style.setProperty('--ink', textInk);
+  }
+  if(textColor) textColor.addEventListener('input', updateTextInk);
+
+  // Custom background handlers
+  function updateBgOverlay(){
+    bgDimPct = parseInt(bgDim?.value||'45',10);
+    bgDimPct = isFinite(bgDimPct)?bgDimPct:45;
+    if(bgDimV) bgDimV.textContent = bgDimPct + '%';
+    bgDimColor = (bgColor?.value||'#000000');
+
+    // Update CSS for overlay on current render
+    const bgLayer = document.getElementById('bgLayer');
+    if(bgLayer){
+      const a = Math.max(0, Math.min(100, bgDimPct)) / 100;
+      const r = parseInt(bgDimColor.slice(1,3),16);
+      const g = parseInt(bgDimColor.slice(3,5),16);
+      const b = parseInt(bgDimColor.slice(5,7),16);
+      bgLayer.style.setProperty('--bg-overlay', `rgba(${r},${g},${b},${a})`);
+    }
+    // Also update global style so it applies even before render()
+    document.documentElement.style.setProperty('--bg-overlay', (()=>{
+      const a = Math.max(0, Math.min(100, bgDimPct)) / 100;
+      const r = parseInt(bgDimColor.slice(1,3),16);
+      const g = parseInt(bgDimColor.slice(3,5),16);
+      const b = parseInt(bgDimColor.slice(5,7),16);
+      return `rgba(${r},${g},${b},${a})`;
+    })());
+  }
+
+  if(bgDim){
+        const onBgDimInput = rafThrottle(()=>{ updateBgOverlay(); /* no full re-render for smooth slider */ });
+    bgDim.addEventListener('input', onBgDimInput);
+    bgDimV.textContent = bgDim.value + '%';
+  }
+  if(bgColor){
+    bgColor.addEventListener('input', ()=>{ updateBgOverlay(); /* no full re-render for smooth slider */ });
+  }
+
+  if(bgFile){
+    bgFile.disabled = true;
+    bgFile.addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        bgImageUrl = String(reader.result||'');
+        render();
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  // init
+  // Default overlay color var used by .bg::after
+  document.documentElement.style.setProperty('--bg-dim','rgba(0,0,0,0.45)');
+  setSize(); // Font selector
+  if(fontSel){
+    const opt0 = fontSel.options[fontSel.selectedIndex];
+    if(opt0){
+      contentFont = opt0.dataset.font || contentFont;
+      bodyWeight = opt0.dataset.weight || bodyWeight;
+      slideEl.style.setProperty('--content-font', contentFont);
+      slideEl.style.setProperty('--body-weight', bodyWeight);
+    }
+    fontSel.addEventListener('change', ()=>{
+      const opt = fontSel.options[fontSel.selectedIndex];
+      contentFont = (opt && opt.dataset.font) ? opt.dataset.font : contentFont;
+      bodyWeight = (opt && opt.dataset.weight) ? opt.dataset.weight : bodyWeight;
+      slideEl.style.setProperty('--content-font', contentFont);
+      slideEl.style.setProperty('--body-weight', bodyWeight);
+      render();
+    });
+  }
+
+  // Premium swatches
+  document.querySelectorAll('.swatches button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const c = b.getAttribute('data-c') || '#000000';
+      const w = b.closest('.swatches');
+      if(!w) return;
+      if(w.dataset.swatch === 'text'){
+        textColor.value = c;
+        updateTextInk();
+      }else if(w.dataset.swatch === 'dim'){
+        bgColor.value = c;
+        updateBgOverlay();
+        render();
+      }
+    });
+  });
+
+  render(); applyTypeScale(1); applyThemeMode();
+</script>
+
+</body>
+</html>
